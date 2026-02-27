@@ -26,11 +26,6 @@ To set up Campus-Navigator locally, follow these steps:
     source venv/bin/activate  # On Windows: `venv\Scripts\activate`
     ```
 
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
 ## ▶️ Usage
 
 11.  **Run the application:**
