@@ -25,15 +25,15 @@ To set up Campus-Navigator locally, follow these steps:
     python -m venv venv
     source venv/bin/activate  # On Windows: `venv\Scripts\activate`
     ```
-
+       
 ## ▶️ Usage
 
-11.  **Run the application:**
+1.  **Run the application:**
     ```bash
     python app.py
     ```
 
-12. **Access in your browser:**
+2. **Access in your browser:**
     Open your web browser and go to `http://127.0.0.0:5000` (or the address shown in your console).
 
 ## 🤝 Contributing
