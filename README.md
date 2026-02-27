@@ -28,7 +28,7 @@ To set up Campus-Navigator locally, follow these steps:
 
 3.  **Install dependencies:**
     ```bash
-    pip install -r requirements.txt # Assuming a requirements.txt will be added later
+    pip install -r requirements.txt
     ```
 
 ## ▶️ Usage
