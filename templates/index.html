@@ -2,438 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>KIIT Smart Campus Navigator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KIIT Campus Navigator</title>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .content {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 20px;
-            height: calc(100vh - 200px);
-        }
-        
-        .control-panel {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            overflow-y: auto;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-        
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .result-box {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 8px;
-            display: none;
-        }
-        
-        .result-box.show {
-            display: block;
-        }
-        
-        .result-box h3 {
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-        
-        .result-box p {
-            margin: 5px 0;
-            color: #555;
-        }
-        
-        .map-container {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 10px;
-            color: #667eea;
-        }
-        
-        .loading.show {
-            display: block;
-        }
 
-        .coordinate-display {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            font-family: monospace;
-            font-size: 12px;
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        @media (max-width: 968px) {
-            .content {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            
-            .map-container {
-                height: 500px;
-            }
-        }
-    </style>
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎓 KIIT Campus Navigator</h1>
-            <p>Find the optimal path across campus using AI pathfinding algorithms</p>
-        </div>
-        
-        <div class="content">
-            <div class="control-panel">
-                <form id="pathForm">
-                    <div class="form-group">
-                        <label for="start">Starting Point</label>
-                        <select id="start" required>
-                            <option value="">Select starting location</option>
-                            <option value="Campus 1">Campus 1</option>
-                            <option value="Campus 2">Campus 2</option>
-                            <option value="Campus 3">Campus 3</option>
-                            <option value="Campus 4">Campus 4</option>
-                            <option value="Campus 5">Campus 5 (KIMS)</option>
-                            <option value="Campus 6 (Convention Center)">Campus 6 (Convention Center)</option>
-                            <option value="Campus 7">Campus 7 (KSOM)</option>
-                            <option value="Campus 8">Campus 8</option>
-                            <option value="Campus 9">Campus 9</option>
-                            <option value="Campus 10">Campus 10</option>
-                            <option value="Campus 11">Campus 11</option>
-                            <option value="Campus 12">Campus 12</option>
-                            <option value="Campus 13">Campus 13</option>
-                            <option value="Campus 14">Campus 14</option>
-                            <option value="Campus 15">Campus 15</option>
-                            <option value="Campus 16">Campus 16</option>
-                            <option value="Campus 17">Campus 17</option>
-                            <option value="Campus 18">Campus 18</option>
-                            <option value="Campus 19">Campus 19</option>
-                            <option value="Campus 20">Campus 20</option>
-                            <option value="Campus 21">Campus 21</option>
-                            <option value="Campus 22">Campus 22</option>
-                            <option value="Campus 23">Campus 23</option>
-                            <option value="Campus 24">Campus 24</option>
-                            <option value="Campus 25">Campus 25</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="destination">Destination</label>
-                        <select id="destination" required>
-                            <option value="">Select destination</option>
-                            <option value="Campus 1">Campus 1</option>
-                            <option value="Campus 2">Campus 2</option>
-                            <option value="Campus 3">Campus 3</option>
-                            <option value="Campus 4">Campus 4</option>
-                            <option value="Campus 5">Campus 5 (KIMS)</option>
-                            <option value="Campus 6 (Convention Center)">Campus 6 (Convention Center)</option>
-                            <option value="Campus 7">Campus 7 (KSOM)</option>
-                            <option value="Campus 8">Campus 8</option>
-                            <option value="Campus 9">Campus 9</option>
-                            <option value="Campus 10">Campus 10</option>
-                            <option value="Campus 11">Campus 11</option>
-                            <option value="Campus 12">Campus 12</option>
-                            <option value="Campus 13">Campus 13</option>
-                            <option value="Campus 14">Campus 14</option>
-                            <option value="Campus 15">Campus 15</option>
-                            <option value="Campus 16">Campus 16</option>
-                            <option value="Campus 17">Campus 17</option>
-                            <option value="Campus 18">Campus 18</option>
-                            <option value="Campus 19">Campus 19</option>
-                            <option value="Campus 20">Campus 20</option>
-                            <option value="Campus 21">Campus 21</option>
-                            <option value="Campus 22">Campus 22</option>
-                            <option value="Campus 23">Campus 23</option>
-                            <option value="Campus 24">Campus 24</option>
-                            <option value="Campus 25">Campus 25</option>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn">Find Optimal Path</button>
-                </form>
-                
-                <div class="loading" id="loading">
-                    <p>⏳ Finding optimal path...</p>
-                </div>
-                
-                <div class="result-box" id="resultBox">
-                    <h3>Optimal Path Found!</h3>
-                    <p><strong>Algorithm:</strong> A* Search</p>
-                    <p><strong>Distance:</strong> <span id="distance"></span></p>
-                    <p><strong>Path:</strong> <span id="pathSteps"></span></p>
-                    <p><strong>Nodes Explored:</strong> <span id="nodesExplored"></span></p>
-                </div>
-            </div>
-            
-            <div class="map-container">
-                <div id="map"></div>
-                <div class="coordinate-display" id="coordDisplay">
-                    Lat: 0.0000, Lng: 0.0000
-                </div>
-            </div>
+
+<header>
+    <h1>🎓 KIIT Campus Navigator</h1>
+    <p>Find the optimal path across campus</p>
+    <button class="dark-toggle" onclick="toggleDark()">🌙</button>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- LEFT : MAP -->
+    <div class="map-panel">
+        <div id="map"></div>
+        <div class="coords" id="coords">Lat: -- , Lng: --</div>
+    </div>
+
+    <!-- RIGHT : RESULT -->
+    <div class="result-panel">
+        <label>Starting Point</label>
+        <select id="start">
+            {% for location in locations %}
+            <option value="{{ location }}">{{ location }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Destination</label>
+        <select id="destination">
+            {% for location in locations %}
+            <option value="{{ location }}">{{ location }}</option>
+            {% endfor %}
+        </select>
+
+        <button onclick="findPath()">Find Optimal Path</button>
+
+        <div class="result-box" id="result">
+            <h3>Optimal Path Found!</h3>
+            <p><b>Algorithm:</b> A* Search</p>
+            <p><b>Distance:</b> -- km</p>
+            <p><b>Path:</b> --</p>
         </div>
     </div>
-    
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script>
-        let map;
-        let pathLayer;
-        
-        // Initialize Leaflet Map
-        function initMap() {
-            // KIIT University coordinates
-            const kiitCenter = [20.3556, 85.8157];
-            
-            map = L.map('map').setView(kiitCenter, 15);
-            
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            }).addTo(map);
-            
-            // Create a layer group for path
-            pathLayer = L.layerGroup().addTo(map);
-        }
-        
-        // Initialize map when page loads
-        window.onload = initMap;
-        
-        // Add mousemove event to display coordinates
-        function setupCoordinateDisplay() {
-            map.on('mousemove', function(e) {
-                const lat = e.latlng.lat.toFixed(4);
-                const lng = e.latlng.lng.toFixed(4);
-                document.getElementById('coordDisplay').innerHTML = 
-                    `Lat: ${lat}, Lng: ${lng}`;
-            });
-            
-            map.on('mouseout', function() {
-                document.getElementById('coordDisplay').innerHTML = 
-                    'Lat: -, Lng: -';
-            });
-        }
-        
-        // Call this after map is initialized
-        setTimeout(setupCoordinateDisplay, 100);
-        
-        // Handle form submission
-        document.getElementById('pathForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const start = document.getElementById('start').value;
-            const destination = document.getElementById('destination').value;
-            
-            if (start === destination) {
-                alert('Please select different start and destination points');
-                return;
-            }
-            
-            // Show loading
-            document.getElementById('loading').classList.add('show');
-            document.getElementById('resultBox').classList.remove('show');
-            
-            try {
-                const response = await fetch('/find_path', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ start, destination })
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                    document.getElementById('loading').classList.remove('show');
-                    return;
-                }
-                
-                // Display results
-                document.getElementById('distance').textContent = data.distance + ' km';
-                document.getElementById('pathSteps').textContent = data.path.join(' → ');
-                document.getElementById('nodesExplored').textContent = data.nodes_explored;
-                
-                document.getElementById('loading').classList.remove('show');
-                document.getElementById('resultBox').classList.add('show');
-                
-                // Draw path on map
-                displayRoute(data.coordinates, data.path);
-                
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to find path. Please try again.');
-                document.getElementById('loading').classList.remove('show');
-            }
-        });
-        
-        // Display route on Leaflet Map - SIMPLIFIED VERSION
-        function displayRoute(coordinates, pathNames) {
-            console.log('Drawing route:', coordinates, pathNames);
-            
-            // Clear previous path and markers
-            pathLayer.clearLayers();
-            
-            if (coordinates.length < 2) {
-                console.error('Not enough coordinates');
-                return;
-            }
-            
-            // Convert coordinates to Leaflet format [lat, lng]
-            const latLngs = coordinates.map(coord => {
-                // Handle both formats: {lat, lng} and {lat, lng, name}
-                return [coord.lat, coord.lng];
-            });
-            
-            console.log('LatLngs:', latLngs);
-            
-            // Draw the main path line
-            const pathLine = L.polyline(latLngs, {
-                color: '#667eea',
-                weight: 4,
-                opacity: 0.8
-            }).addTo(pathLayer);
-            
-            // Add markers for each location
-            latLngs.forEach((latLng, index) => {
-                const isStart = index === 0;
-                const isEnd = index === latLngs.length - 1;
-                const locationName = pathNames[index] || `Point ${index + 1}`;
-                
-                // Create marker
-                let markerColor, markerLabel;
-                
-                if (isStart) {
-                    markerColor = 'green';
-                    markerLabel = 'START: ';
-                } else if (isEnd) {
-                    markerColor = 'red';
-                    markerLabel = 'END: ';
-                } else {
-                    markerColor = 'blue';
-                    markerLabel = 'Stop ' + index + ': ';
-                }
-                
-                // Use default Leaflet markers with custom popup
-                const marker = L.marker(latLng).addTo(pathLayer);
-                marker.bindPopup(`<b>${markerLabel}</b>${locationName}`);
-                
-                // Add circle marker for better visibility
-                L.circleMarker(latLng, {
-                    radius: 8,
-                    fillColor: markerColor === 'green' ? '#22c55e' : (markerColor === 'red' ? '#ef4444' : '#3b82f6'),
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(pathLayer).bindPopup(`<b>${markerLabel}</b>${locationName}`);
-            });
-            
-            // Fit map to show entire path with padding
-            map.fitBounds(pathLine.getBounds(), { padding: [50, 50] });
-            
-            console.log('Route displayed successfully');
-        }
-    </script>
+</div>
+
+<!-- CONTACT + FEEDBACK -->
+<section class="contact-wrapper">
+    <div class="contact-card">
+        <h2>📞 Contact Us</h2>
+        <div class="contact-line">📍 KIIT University, Bhubaneswar, Odisha</div>
+        <div class="contact-line">📧 23051825@kiit.ac.in</div>
+        <div class="contact-line">☎ +91 9039860092</div>
+
+        <button class="feedback-btn" onclick="openFeedback()">Give Feedback</button>
+    </div>
+</section>
+
+<!-- FEEDBACK MODAL -->
+<div class="modal" id="feedbackModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeFeedback()">×</span>
+        <h2>📝 Feedback</h2>
+        <p class="sub">We value your feedback</p>
+
+        <input type="text" id="fb-name" placeholder="Your Name">
+        <input type="email" id="fb-email" placeholder="Your Email">
+        <textarea id="fb-comment" placeholder="Your Feedback"></textarea>
+
+        <button onclick="submitFeedback()">Submit</button>
+    </div>
+</div>
+
+<footer>
+    © 2026 KIIT University | Smart Campus Navigator
+</footer>
+
+<script>
+    const campusLocations = {{locations_dict | tojson}};
+</script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="/static/js/script.js"></script>
 </body>
 </html>
