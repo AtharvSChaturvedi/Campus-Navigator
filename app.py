@@ -1,239 +1,64 @@
 from flask import Flask, render_template, request, jsonify
 from queue import PriorityQueue
 import math
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
+# SMTP Configuration (Placeholders)
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SENDER_EMAIL = "SENDER_MAIL_ID"
+SENDER_PASSWORD = "SENDER_MAIL_PASSWD"
+RECEIVER_EMAIL = "ONE_O_MORE_MAIL_ID_FOR_VERIFICATION"
+
 # KIIT Campus locations with REAL coordinates
 LOCATIONS = {
-    "Campus 1": {"lat": 20.3461, "lng": 85.8236},
-    "Campus 2": {"lat": 20.3532, "lng": 85.8197},
     "Campus 3": {"lat": 20.3531, "lng": 85.8165},
-    "Campus 4": {"lat": 20.3538, "lng": 85.8202},
-    "Campus 5 (KIMS)": {"lat": 20.3527, "lng": 85.8140},
     "Campus 6 (Convention Center)": {"lat": 20.3525, "lng": 85.8195},
-    "Campus 7 (KSOM)": {"lat": 20.3507, "lng": 85.8195},
     "Campus 8": {"lat": 20.3512, "lng": 85.8194},
-    "Campus 9": {"lat": 20.3534, "lng": 85.8117},
-    "Campus 10": {"lat": 20.3596, "lng": 85.8180},
-    "Campus 11": {"lat": 20.3606, "lng": 85.8229},
     "Campus 12": {"lat": 20.3545, "lng": 85.8194},
     "Campus 13": {"lat": 20.3565, "lng": 85.8185},
     "Campus 14": {"lat": 20.3561, "lng": 85.8154},
     "Campus 15": {"lat": 20.3487, "lng": 85.8148},
-    "Campus 16": {"lat": 20.3617, "lng": 85.8228},
     "Campus 17": {"lat": 20.3492, "lng": 85.8194},
-    "Campus 18": {"lat": 20.3558, "lng": 85.8236},
-    "Campus 19": {"lat": 20.3538, "lng": 85.8196},
     "Campus 20": {"lat": 20.3540, "lng": 85.8162},
-    "Campus 21": {"lat": 20.3502, "lng": 85.8157},
-    "Campus 22": {"lat": 20.3540, "lng": 85.8148},
-    "Campus 23": {"lat": 20.3481, "lng": 85.8204},
-    "Campus 24": {"lat": 20.3490, "lng": 85.8150},
     "Campus 25": {"lat": 20.3640, "lng": 85.8162}
 }
 
 # Expanded Graph - Connected based on actual road topology
 GRAPH = {
-    "Campus 1": [
-        ("Campus 2", 0.25), ("Campus 3", 0.4), ("Campus 4", 0.4), ("Campus 5 (KIMS)", 0.4),
-        ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4), ("Campus 9", 0.4),
-        ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 2": [
-        ("Campus 1", 0.25), ("Campus 3", 0.4), ("Campus 4", 0.2), ("Campus 5 (KIMS)", 0.4),
-        ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4), ("Campus 9", 0.4),
-        ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
     "Campus 3": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 4", 0.35), ("Campus 5 (KIMS)", 0.4),
-        ("Campus 6 (Convention Center)", 0.5), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4), ("Campus 9", 0.4),
-        ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 4": [
-        ("Campus 1", 0.4), ("Campus 2", 0.2), ("Campus 3", 0.35), ("Campus 5 (KIMS)", 0.4),
-        ("Campus 6 (Convention Center)", 0.3), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4), ("Campus 9", 0.4),
-        ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 5 (KIMS)": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.5), ("Campus 8", 0.4), ("Campus 9", 0.4),
-        ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.1), ("Campus 25", 0.4),
+        ("Campus 20", 0.059), ("Campus 14", 0.4), ("Campus 15", 0.5)
     ],
     "Campus 6 (Convention Center)": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.5), ("Campus 4", 0.3),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.3), ("Campus 9", 0.4),
-        ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.8), ("Campus 13", 0.405),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 7 (KSOM)": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.5), ("Campus 6 (Convention Center)", 0.4), ("Campus 8", 0.4), ("Campus 9", 0.2),
-        ("Campus 10", 0.3), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
+        ("Campus 3", 0.4), ("Campus 12", 0.16), ("Campus 8", 0.45),
     ],
     "Campus 8": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.3), ("Campus 7 (KSOM)", 0.4), ("Campus 9", 0.4),
-        ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 9": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.2), ("Campus 8", 0.4),
-        ("Campus 10", 0.15), ("Campus 11", 0.4), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 10": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.3), ("Campus 8", 0.4),
-        ("Campus 9", 0.15), ("Campus 11", 0.3), ("Campus 12", 0.4), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 11": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.3), ("Campus 12", 0.2), ("Campus 13", 0.4),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
+        ("Campus 6 (Convention Center)", 0.45), ("Campus 17", 0.26)
     ],
     "Campus 12": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.8), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.2), ("Campus 13", 0.15),
-        ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
+        ("Campus 6 (Convention Center)", 0.16), ("Campus 13", 0.3)
     ],
     "Campus 13": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.405), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.15),
-        ("Campus 14", 0.15), ("Campus 15", 0.4), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 1.2),
+        ("Campus 12", 0.3), ("Campus 14", 0.4)
     ],
     "Campus 14": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.15), ("Campus 15", 0.15), ("Campus 16", 0.4), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
+        ("Campus 13", 0.4), ("Campus 25", 1.2), ("Campus 20", 0.35)
     ],
     "Campus 15": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.15), ("Campus 16", 0.3), ("Campus 17", 0.4),
-        ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 16": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.3), ("Campus 17", 0.15),
-        ("Campus 18", 0.4), ("Campus 19", 0.2), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
+        ("Campus 3", 0.5), ("Campus 17", 0.55)
     ],
     "Campus 17": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.15),
-        ("Campus 18", 0.15), ("Campus 19", 0.4), ("Campus 20", 0.4), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 18": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4),
-        ("Campus 17", 0.15), ("Campus 19", 0.4), ("Campus 20", 0.2), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 19": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.2),
-        ("Campus 17", 0.4), ("Campus 18", 0.4), ("Campus 20", 0.1), ("Campus 21", 0.4),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
+        ("Campus 8", 0.26), ("Campus 15", 0.55)
     ],
     "Campus 20": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4),
-        ("Campus 17", 0.4), ("Campus 18", 0.2), ("Campus 19", 0.1), ("Campus 21", 0.1),
-        ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 21": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4),
-        ("Campus 17", 0.4), ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.1),
-        ("Campus 22", 0.1), ("Campus 23", 0.4), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 22": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4),
-        ("Campus 17", 0.4), ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4),
-        ("Campus 21", 0.1), ("Campus 23", 0.1), ("Campus 24", 0.4), ("Campus 25", 0.4),
-    ],
-    "Campus 23": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4),
-        ("Campus 17", 0.4), ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4),
-        ("Campus 21", 0.4), ("Campus 22", 0.1), ("Campus 24", 0.4), ("Campus 25", 0.15),
-    ],
-    "Campus 24": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.1), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 0.4), ("Campus 14", 0.4), ("Campus 15", 0.4), ("Campus 16", 0.4),
-        ("Campus 17", 0.4), ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4),
-        ("Campus 21", 0.4), ("Campus 22", 0.4), ("Campus 23", 0.4), ("Campus 25", 0.4),
+        ("Campus 3", 0.059), ("Campus 14", 0.35)
     ],
     "Campus 25": [
-        ("Campus 1", 0.4), ("Campus 2", 0.4), ("Campus 3", 0.4), ("Campus 4", 0.4),
-        ("Campus 5 (KIMS)", 0.4), ("Campus 6 (Convention Center)", 0.4), ("Campus 7 (KSOM)", 0.4), ("Campus 8", 0.4),
-        ("Campus 9", 0.4), ("Campus 10", 0.4), ("Campus 11", 0.4), ("Campus 12", 0.4),
-        ("Campus 13", 1.4), ("Campus 14", 1.2), ("Campus 15", 0.4), ("Campus 16", 0.4),
-        ("Campus 17", 0.4), ("Campus 18", 0.4), ("Campus 19", 0.4), ("Campus 20", 0.4),
-        ("Campus 21", 0.4), ("Campus 22", 0.4), ("Campus 23", 0.15), ("Campus 24", 0.4),
+        ("Campus 14", 1.2)
     ],
 }
 
@@ -285,7 +110,8 @@ def astar_search(start, goal):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    locations_list = sorted(LOCATIONS.keys())
+    return render_template('index.html', locations=locations_list, locations_dict=LOCATIONS)
 
 @app.route('/find_path', methods=['POST'])
 def find_path():
@@ -312,6 +138,38 @@ def find_path():
         'nodes_explored': nodes_explored,
         'coordinates': coordinates
     })
+
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    data = request.json
+    name = data.get('name')
+    email = data.get('email')
+    comment = data.get('comment')
+    
+    if not name or not email or not comment:
+        return jsonify({'success': False, 'message': 'Missing fields'}), 400
+    
+    # Send Email
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = ",".join(RECEIVER_EMAIL)
+        msg['Subject'] = f"Campus Navigator Feedback from {name}"
+        
+        body = f"Name: {name}\nEmail: {email}\n\nFeedback:\n{comment}"
+        msg.attach(MIMEText(body, 'plain'))
+        
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, text)
+        server.quit()
+        
+        return jsonify({'success': True, 'message': 'Feedback sent!'})
+    except Exception as e:
+        print(f"SMTP Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
