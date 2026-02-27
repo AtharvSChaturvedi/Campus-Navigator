@@ -46,7 +46,3 @@ To set up Campus-Navigator locally, follow these steps:
 Contributions are welcome! Please feel free to:
 *   Open an issue to report bugs or suggest features.
 *   Fork the repository and submit pull requests.
-
-## 📝 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details. (A `LICENSE` file will be added later if not present.)
