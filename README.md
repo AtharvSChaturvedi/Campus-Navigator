@@ -30,9 +30,7 @@ kiit-campus-navigator/
 │       └── script.js       # Map, pathfinding UI, voice, feedback
 ├── .env                    # Secret credentials (never commit this)
 ├── .gitignore
-├── requirements.txt
-├── .vscode
-│   └── settings.json
+└── requirements.txt
 ```
 
 ---
@@ -94,7 +92,7 @@ Campus nodes and edge weights (in km) are defined in `app.py` under `LOCATIONS` 
 | Campus | Coordinates |
 |---|---|
 | Campus 3 | 20.3531, 85.8165 |
-| Campus 6 | 20.3525, 85.8195 |
+| Campus 6 (Convention Center) | 20.3525, 85.8195 |
 | Campus 8 | 20.3512, 85.8194 |
 | Campus 12 | 20.3545, 85.8194 |
 | Campus 13 | 20.3565, 85.8185 |
@@ -119,6 +117,7 @@ The app will automatically select the locations and find the path.
 ## 🔒 Security Notes
 
 - Never commit your `.env` file — it's listed in `.gitignore`
+- Add `.vscode/` to `.gitignore` to keep editor settings out of the repo
 - Never hardcode credentials directly in `app.py`
 - Rotate your App Password if it's ever accidentally exposed
 
