@@ -4,20 +4,25 @@ import math
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import speech_recognition as sr
+import pyttsx3
+import re
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)
 
 # SMTP Configuration (Placeholders)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = "SENDER_MAIL_ID"
-SENDER_PASSWORD = "SENDER_MAIL_PASSWD"
-RECEIVER_EMAIL = "ONE_O_MORE_MAIL_ID_FOR_VERIFICATION"
+SENDER_EMAIL    = os.environ.get("SENDER_EMAIL")
+SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
+RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 
 # KIIT Campus locations with REAL coordinates
 LOCATIONS = {
     "Campus 3": {"lat": 20.3531, "lng": 85.8165},
-    "Campus 6 (Convention Center)": {"lat": 20.3525, "lng": 85.8195},
+    "Campus 6": {"lat": 20.3525, "lng": 85.8195},
     "Campus 8": {"lat": 20.3512, "lng": 85.8194},
     "Campus 12": {"lat": 20.3545, "lng": 85.8194},
     "Campus 13": {"lat": 20.3565, "lng": 85.8185},
@@ -33,14 +38,14 @@ GRAPH = {
     "Campus 3": [
         ("Campus 20", 0.059), ("Campus 14", 0.4), ("Campus 15", 0.5)
     ],
-    "Campus 6 (Convention Center)": [
+    "Campus 6": [
         ("Campus 3", 0.4), ("Campus 12", 0.16), ("Campus 8", 0.45),
     ],
     "Campus 8": [
-        ("Campus 6 (Convention Center)", 0.45), ("Campus 17", 0.26)
+        ("Campus 6", 0.45), ("Campus 17", 0.26)
     ],
     "Campus 12": [
-        ("Campus 6 (Convention Center)", 0.16), ("Campus 13", 0.3)
+        ("Campus 6", 0.16), ("Campus 13", 0.3)
     ],
     "Campus 13": [
         ("Campus 12", 0.3), ("Campus 14", 0.4)
@@ -113,6 +118,49 @@ def index():
     locations_list = sorted(LOCATIONS.keys())
     return render_template('index.html', locations=locations_list, locations_dict=LOCATIONS)
 
+@app.route('/voice_command', methods=['POST'])
+def voice_command():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        engine = pyttsx3.init()
+        engine.say("Please say your start and destination campus.")
+        engine.runAndWait()
+        print("Listening...")
+        audio = r.listen(source)
+        print("Recognizing...")
+
+    try:
+        command = r.recognize_google(audio).title()
+        print(f"User said: {command}")
+        
+        start_match = re.search(r"Start Campus ([\d]+)", command)
+        dest_match = re.search(r"Destination Campus ([\d]+)", command)
+
+        start_campus = f"Campus {start_match.group(1)}" if start_match else None
+        dest_campus = f"Campus {dest_match.group(1)}" if dest_match else None
+
+        if start_campus and dest_campus and start_campus in LOCATIONS and dest_campus in LOCATIONS:
+            engine = pyttsx3.init()
+            engine.say(f"Starting from {start_campus} to {dest_campus}")
+            engine.runAndWait()
+            return jsonify({'start': start_campus, 'destination': dest_campus})
+        else:
+            engine = pyttsx3.init()
+            engine.say("Sorry, I could not understand the locations. Please try again.")
+            engine.runAndWait()
+            return jsonify({'error': 'Could not understand locations'}), 400
+
+    except sr.UnknownValueError:
+        engine = pyttsx3.init()
+        engine.say("Sorry, I could not understand audio.")
+        engine.runAndWait()
+        return jsonify({'error': 'Could not understand audio'}), 400
+    except sr.RequestError as e:
+        engine = pyttsx3.init()
+        engine.say("Could not request results from Google Speech Recognition service.")
+        engine.runAndWait()
+        return jsonify({'error': f"Could not request results; {e}"}), 500
+
 @app.route('/find_path', methods=['POST'])
 def find_path():
     data = request.json
@@ -153,7 +201,7 @@ def submit_feedback():
     try:
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
-        msg['To'] = ",".join(RECEIVER_EMAIL)
+        msg['To'] = RECEIVER_EMAIL
         msg['Subject'] = f"Campus Navigator Feedback from {name}"
         
         body = f"Name: {name}\nEmail: {email}\n\nFeedback:\n{comment}"
