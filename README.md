@@ -30,7 +30,7 @@ kiit-campus-navigator/
 │       └── script.js       # Map, pathfinding UI, voice, feedback
 ├── .env                    # Secret credentials (never commit this)
 ├── .gitignore
-└── requirements.txt
+├── requirements.txt
 ├── .vscode
 │   └── settings.json
 ```
