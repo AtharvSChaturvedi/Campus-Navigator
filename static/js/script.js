@@ -114,6 +114,39 @@ function closeFeedback(){
     document.getElementById("feedbackModal").style.display="none";
 }
 
+// Voice Command
+const voiceCommandBtn = document.getElementById('voice-command-btn');
+const voiceCommandStatus = document.getElementById('voice-command-status');
+
+voiceCommandBtn.addEventListener('click', async () => {
+    voiceCommandStatus.innerText = "Listening...";
+    voiceCommandBtn.disabled = true;
+
+    try {
+        const response = await fetch('/voice_command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            voiceCommandStatus.innerText = data.error;
+        } else {
+            voiceCommandStatus.innerText = "Processing...";
+            document.getElementById('start').value = data.start;
+            document.getElementById('destination').value = data.destination;
+            await findPath();
+            voiceCommandStatus.innerText = "Path found!";
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        voiceCommandStatus.innerText = "Failed to get voice command.";
+    } finally {
+        voiceCommandBtn.disabled = false;
+    }
+});
+
 async function submitFeedback() {
     const name = document.getElementById("fb-name").value;
     const email = document.getElementById("fb-email").value;
