@@ -5,6 +5,9 @@
 }
 
 /* Base */
+*,*::before,*::after{
+    box-sizing:border-box;
+}
 body{
     margin:0;
     font-family:"Segoe UI", Arial;
@@ -20,12 +23,20 @@ header{
     padding:32px 20px;
     position:relative;
 }
-header p{font-size:14px;margin-top:6px;}
+header h1{
+    margin:0;
+    font-size:28px;
+}
+header p{
+    font-size:14px;
+    margin:6px 0 0;
+}
 
 .dark-toggle{
     position:absolute;
     right:24px;
-    top:24px;
+    top:50%;
+    transform:translateY(-50%);
     width:38px;
     height:38px;
     border-radius:50%;
@@ -34,89 +45,164 @@ header p{font-size:14px;margin-top:6px;}
     color:white;
     font-size:18px;
     cursor:pointer;
+    transition:background 0.2s;
+}
+.dark-toggle:hover{
+    background:rgba(255,255,255,0.4);
 }
 
 /* Layout */
 .main{
     display:flex;
     gap:20px;
-    padding:20px;
+    padding:24px 20px;
+    align-items:stretch;
 }
 
 /* Map */
 .map-panel{
     width:65%;
     background:white;
-    padding:10px;
+    padding:12px;
     border-radius:16px;
     position:relative;
+    box-shadow:0 4px 16px rgba(0,0,0,0.07);
 }
-#map{height:460px;border-radius:12px;}
+#map{
+    height:560px;
+    border-radius:12px;
+}
 .coords{
     position:absolute;
-    bottom:10px;
-    left:10px;
+    bottom:22px;         /* raised so it clears the panel padding */
+    left:22px;
     background:white;
     padding:6px 10px;
     border-radius:8px;
     font-size:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+    z-index:500;
+    pointer-events:none;
 }
 
-/* Result */
+/* Result Panel */
 .result-panel{
     width:35%;
     background:white;
-    padding:20px;
+    padding:22px;
     border-radius:16px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.07);
 }
-label{font-weight:bold;margin-top:10px;display:block;}
-select,button{
+
+label{
+    font-weight:bold;
+    margin-top:10px;
+    display:block;
+    font-size:14px;
+    color:#2f6f4e;
+}
+
+select{
     width:100%;
-    padding:10px;
+    padding:10px 12px;
     margin-top:6px;
     border-radius:10px;
     border:1px solid #ccc;
+    font-size:14px;
+    background:white;
+    cursor:pointer;
+    outline:none;
+    transition:border-color 0.2s;
 }
-button{
+select:focus{
+    border-color:var(--pista-main);
+}
+
+/* Buttons — scoped so selects are unaffected */
+.result-panel button,
+.feedback-btn,
+.modal-content button{
+    width:100%;
+    padding:11px 10px;
+    border-radius:10px;
+    border:none;
     background:var(--pista-main);
     color:white;
-    border:none;
-    margin-top:15px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.2s, transform 0.1s;
 }
+.result-panel button:hover,
+.feedback-btn:hover,
+.modal-content button:hover{
+    background:var(--pista-dark);
+}
+.result-panel button:active{
+    transform:scale(0.98);
+}
+
+/* Space between the two action buttons */
+.result-panel button + button{
+    margin-top:10px;
+}
+
+#voice-command-status{
+    font-size:13px;
+    color:#555;
+    margin:6px 0 0;
+    min-height:18px;
+    text-align:center;
+}
+
 .result-box{
     background:#f1fbf3;
     border-left:6px solid var(--pista-main);
     padding:15px;
-    margin-top:20px;
+    margin-top:14px;
     border-radius:12px;
+    font-size:14px;
+    line-height:1.6;
+}
+.result-box h3{
+    margin:0 0 8px;
+    font-size:15px;
+}
+.result-box p{
+    margin:4px 0;
 }
 
 /* Contact */
 .contact-wrapper{
     display:flex;
     justify-content:center;
-    padding:40px 20px;
+    padding:32px 20px 40px;
 }
 .contact-card{
     background:white;
     width:90%;
     max-width:900px;
-    padding:28px;
+    padding:32px 28px;
     border-radius:22px;
     text-align:center;
-    box-shadow:0 12px 30px rgba(0,0,0,0.12);
+    box-shadow:0 12px 30px rgba(0,0,0,0.10);
+}
+.contact-card h2{
+    margin:0 0 14px;
 }
 .contact-line{
     font-size:15px;
-    margin:6px 0;
+    margin:8px 0;
 }
 .feedback-btn{
-    margin-top:18px;
-    padding:10px 26px;
+    display:inline-block;
+    width:auto;
+    margin-top:20px;
+    padding:10px 32px;
     border-radius:22px;
-    border:none;
-    background:var(--pista-main);
-    color:white;
     font-size:15px;
 }
 
@@ -132,24 +218,42 @@ button{
 }
 .modal-content{
     background:white;
-    padding:30px;
+    padding:32px 28px;
     width:90%;
-    max-width:400px;
+    max-width:420px;
     border-radius:20px;
     text-align:center;
     position:relative;
 }
+.modal-content h2{
+    margin:0 0 4px;
+}
+.modal-content .sub{
+    font-size:13px;
+    color:#777;
+    margin:0 0 16px;
+}
 .modal-content input,
 .modal-content textarea{
     width:100%;
-    padding:10px;
-    margin:8px 0;
+    padding:10px 12px;
+    margin:6px 0;
     border-radius:10px;
     border:1px solid #ccc;
+    font-size:14px;
+    outline:none;
+    transition:border-color 0.2s;
+}
+.modal-content input:focus,
+.modal-content textarea:focus{
+    border-color:var(--pista-main);
 }
 .modal-content textarea{
     height:90px;
     resize:none;
+}
+.modal-content button{
+    margin-top:12px;
 }
 .close-btn{
     position:absolute;
@@ -157,6 +261,11 @@ button{
     right:16px;
     font-size:22px;
     cursor:pointer;
+    line-height:1;
+    color:#555;
+}
+.close-btn:hover{
+    color:#000;
 }
 
 /* Footer */
@@ -164,22 +273,35 @@ footer{
     background:var(--pista-dark);
     color:white;
     text-align:center;
-    padding:12px;
+    padding:14px;
+    font-size:13px;
 }
 
 /* Mobile */
 @media(max-width:900px){
-    .main{flex-direction:column;}
-    .map-panel,.result-panel{width:100%;}
+    .main{
+        flex-direction:column;
+        padding:16px;
+    }
+    .map-panel,
+    .result-panel{
+        width:100%;
+    }
+    #map{
+        height:340px;
+    }
 }
 
-/* Dark Mode */
+/* ── Dark Mode ─────────────────────────────────── */
 .dark{
     background:#0f1f17;
     color:#e6f4ea;
 }
 .dark header{
     background:linear-gradient(135deg,#1f3f2c,#2f6f4e);
+}
+.dark label{
+    color:#80c990;
 }
 .dark .map-panel,
 .dark .result-panel,
@@ -196,9 +318,18 @@ footer{
     background:#163a2a;
 }
 .dark select,
-.dark input,
-.dark textarea{
+.dark .modal-content input,
+.dark .modal-content textarea{
     background:#223a2e;
     color:white;
     border:1px solid #3f6f57;
+}
+.dark #voice-command-status{
+    color:#9dd4a8;
+}
+.dark .close-btn{
+    color:#9dd4a8;
+}
+.dark .close-btn:hover{
+    color:white;
 }
