@@ -1,4 +1,4 @@
-# 🎓 KIIT Smart Campus Navigator
+# 🎓 KIIT Campus Navigator
 
 A web-based campus pathfinding application for KIIT University, Bhubaneswar. It uses the **A\* Search Algorithm** to compute the optimal route between campus buildings, visualized on an interactive map.
 
