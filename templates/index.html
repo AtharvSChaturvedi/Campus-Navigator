@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KIIT Smart Campus Navigator</title>
+    <title>KIIT Campus Navigator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Leaflet -->
@@ -43,6 +43,8 @@
         </select>
 
         <button onclick="findPath()">Find Optimal Path</button>
+        <button id="voice-command-btn">Use Voice Command</button>
+        <p id="voice-command-status"></p>
 
         <div class="result-box" id="result">
             <h3>Optimal Path Found!</h3>
