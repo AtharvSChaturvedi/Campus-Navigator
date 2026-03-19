@@ -15,7 +15,7 @@ app = Flask(__name__)
 # SMTP Configuration (Placeholders)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL    = os.environ.get("SENDER_EMAIL")
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL")
 SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
 RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 
